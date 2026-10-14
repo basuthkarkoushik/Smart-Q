@@ -1,0 +1,3 @@
+node_modules/
+backend/smartq.db
+backend/smartq.db-*
