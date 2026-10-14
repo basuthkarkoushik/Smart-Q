@@ -777,6 +777,24 @@ const server = http.createServer(async (req, res) => {
         return res.end();
     }
 
+    // Protected database download (only works if DB_DOWNLOAD_KEY env variable is set)
+    if (url.pathname === "/download-db") {
+        const key = process.env.DB_DOWNLOAD_KEY || "";
+        const given = String(url.searchParams.get("key") || "");
+        const a = crypto.createHash("sha256").update(key).digest();
+        const b = crypto.createHash("sha256").update(given).digest();
+        if (!key || !crypto.timingSafeEqual(a, b)) {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            return res.end("Not found");
+        }
+        const dbFile = process.env.DB_PATH || path.join(__dirname, "smartq.db");
+        res.writeHead(200, {
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": "attachment; filename=smartq.db"
+        });
+        return fs.createReadStream(dbFile).pipe(res);
+    }
+
     if (!url.pathname.startsWith("/api/")) {
         return serveStatic(res, url);
     }
